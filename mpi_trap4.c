@@ -47,12 +47,14 @@ double Trap(double left_endpt, double right_endpt, int trap_count,
 double f(double x); 
 
 int main(int argc, char* argv[]) {
+   // argc: how many arguments passed at command line
+   // argv: array for command line arguments
    int my_rank, comm_sz, n, local_n;   
    double a, b, h, local_a, local_b;
    double local_int, total_int;
 
    /* Let the system do what it needs to start up MPI */
-   MPI_Init(&argc, &argv);
+   MPI_Init(&argc, &argv);    // Pass command line arguments, rather than NULL
 
    /* Get my process rank */
    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -60,11 +62,11 @@ int main(int argc, char* argv[]) {
    /* Find out how many processes are being used */
    MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
 
-   a = atof(argv[1]);   //Argument 1, float
-   b = atof(argv[2]);   //Argument 2, float
-   n = atoi(argv[3]);   //Argument 3, integer
+   a = atof(argv[1]);   //Command line argument 1, double, lower limit
+   b = atof(argv[2]);   //Command line argument 2, double, upper limit
+   n = atoi(argv[3]);   //Command line argument 3, integer, number of trapezoids
 
-   //Get_input(my_rank, comm_sz, &a, &b, &n);  --- Not needed
+   //Get_input(my_rank, comm_sz, &a, &b, &n);  --- Not needed, arguments passed from command line, broadcasting not required
 
    h = (b-a)/n;          /* h is the same for all processes */
    local_n = n/comm_sz;  /* So is the number of trapezoids  */
@@ -83,7 +85,7 @@ int main(int argc, char* argv[]) {
    /* Print the result */
    if (my_rank == 0) {
       printf("With n = %d trapezoids, our estimate\n", n);
-      printf("of the integral from %f to %f = %.17e\n",  //Changed to %.17e for maximum digits
+      printf("of the integral from %f to %f = %.17e\n",  //Changed to %.17e for maximum precision
           a, b, total_int);
    }
 
