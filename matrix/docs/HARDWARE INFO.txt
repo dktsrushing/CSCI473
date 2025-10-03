@@ -1,0 +1,120 @@
+
+PS C:\WINDOWS\system32> # hardware_report.ps1
+>>
+>> # ============================
+>> # CPU Info
+>> # ============================
+>> Write-Host "`n=== CPU Info ===`n"
+>> Get-CimInstance Win32_Processor |
+>>     Select-Object Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, L2CacheSize, L3CacheSize |
+>>     Format-Table -AutoSize
+>>
+>> # ============================
+>> # RAM Info
+>> # ============================
+>> Write-Host "`n=== RAM Info ===`n"
+>> $ramModules = Get-CimInstance Win32_PhysicalMemory |
+>>     Select-Object Manufacturer, Capacity, Speed
+>> foreach ($ram in $ramModules) {
+>>     $sizeGB = [math]::Round($ram.Capacity / 1GB,2)
+>>     Write-Host "Manufacturer: $($ram.Manufacturer) | Size: $sizeGB GB | Speed: $($ram.Speed) MHz"
+>> }
+>>
+>> $totalRAMGB = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB,2)
+>> Write-Host "Total RAM: $totalRAMGB GB"
+>>
+>> # ============================
+>> # Storage Info
+>> # ============================
+>> Write-Host "`n=== Storage Info ===`n"
+>> Get-PhysicalDisk |
+>>     Select-Object FriendlyName, MediaType, @{Name="SizeGB";Expression={[math]::Round($_.Size/1GB,2)}} |
+>>     Format-Table -AutoSize
+>>
+>> # ============================
+>> # Quick CPU Benchmark (FLOPS)
+>> # ============================
+>> Write-Host "`n=== Quick CPU Benchmark ===`n"
+>> $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+>> $N = 5000000
+>> $a = 0.0
+>> for ($i=0; $i -lt $N; $i++) {
+>>     $a += [math]::Sqrt($i)
+>> }
+>> $stopwatch.Stop()
+>> Write-Host "Performed $N sqrt operations in $($stopwatch.Elapsed.TotalSeconds) seconds"
+>> Write-Host "Approximate FLOPS: $([math]::Round($N/$stopwatch.Elapsed.TotalSeconds,0)) ops/sec"
+>>
+>> # ============================
+>> # Memory Bandwidth Test (simple)
+>> # ============================
+>> Write-Host "`n=== Simple Memory Bandwidth Test ===`n"
+>> $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+>> $size = 10000000
+>> $arr = New-Object Double[] $size
+>> for ($i=0; $i -lt $size; $i++) { $arr[$i] = $i }
+>> $sum = 0.0
+>> for ($i=0; $i -lt $size; $i++) { $sum += $arr[$i] }
+>> $stopwatch.Stop()
+>> Write-Host "Filled and summed array of $size doubles in $($stopwatch.Elapsed.TotalSeconds) seconds"
+>> Write-Host "Approximate memory throughput: $([math]::Round(($size*8)/1e6/$stopwatch.Elapsed.TotalSeconds,2)) MB/s"
+>>
+
+=== CPU Info ===
+
+
+Name                                            NumberOfCores NumberOfLogicalProcessors MaxClockSpeed L2CacheSize L3Cac
+                                                                                                                  heSiz
+                                                                                                                      e
+----                                            ------------- ------------------------- ------------- ----------- -----
+AMD Ryzen 7 7800X3D 8-Core Processor                        8                        16          4201        8192 98304
+
+
+
+=== RAM Info ===
+
+Manufacturer: Unknown | Size: 16 GB | Speed: 4800 MHz
+Manufacturer: Unknown | Size: 16 GB | Speed: 4800 MHz
+Manufacturer: Unknown | Size: 16 GB | Speed: 4800 MHz
+Manufacturer: Unknown | Size: 16 GB | Speed: 4800 MHz
+Total RAM: 63.12 GB
+
+=== Storage Info ===
+
+
+FriendlyName                   MediaType SizeGB
+------------                   --------- ------
+SanDisk SDSSDXP120G            SSD       111.79
+Crucial_CT1050MX300SSD1        SSD       978.09
+Samsung SSD 970 EVO Plus 500GB SSD       465.76
+
+
+
+=== Quick CPU Benchmark ===
+
+Performed 5000000 sqrt operations in 4.3144654 seconds
+Approximate FLOPS: 1158892 ops/sec
+
+=== Simple Memory Bandwidth Test ===
+
+Filled and summed array of 10000000 doubles in 18.9800485 seconds
+Approximate memory throughput: 4.21 MB/s
+PS C:\WINDOWS\system32>
+
+
+NOTES: 
+RAM ACTUAL SPEED 6000MT/s
+L1 cache: 512kb
+L2 cache: 8MB
+L3 cache: 96MB
+
+SanDisk: SATA3
+Crucial: SATA3
+Samsung: PCIe 3.0 x4 NVMe
+
+
+For true FLOPS and memory bandwidth, use C/C++ microbenchmarks (Intel MKL or Stream benchmark).
+
+For full cache info and core type, you’d need CPU-Z, HWiNFO, or WSL + lscpu (but WSL sees virtual CPU).
+
+PowerShell is great for basic inventory and storage info.
